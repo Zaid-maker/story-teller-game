@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { showSuccess, showError } from "@/utils/toast";
+import { Header } from "@/components/Header";
 
 const Account = () => {
   const { user, session, loading: authLoading } = useAuth();
@@ -95,34 +96,37 @@ const Account = () => {
   if (!session) return null;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Account</CardTitle>
-          <CardDescription>Update your account settings. Your email is {user?.email}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="username">Username</Label>
-            <Input
-              id="username"
-              type="text"
-              value={username || ""}
-              onChange={(e) => setUsername(e.target.value)}
-              disabled={profileLoading}
-            />
-             <p className="text-sm text-muted-foreground">This will be your name on the leaderboard.</p>
-          </div>
-        </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button variant="outline" onClick={handleSignOut} disabled={profileLoading}>
-            Sign Out
-          </Button>
-          <Button onClick={updateProfile} disabled={profileLoading}>
-            {profileLoading ? "Saving..." : "Save"}
-          </Button>
-        </CardFooter>
-      </Card>
+    <div className="min-h-screen flex flex-col bg-background">
+      <Header />
+      <main className="flex-grow flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle>Account</CardTitle>
+            <CardDescription>Update your account settings. Your email is {user?.email}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="username">Username</Label>
+              <Input
+                id="username"
+                type="text"
+                value={username || ""}
+                onChange={(e) => setUsername(e.target.value)}
+                disabled={profileLoading}
+              />
+               <p className="text-sm text-muted-foreground">This will be your name on the leaderboard.</p>
+            </div>
+          </CardContent>
+          <CardFooter className="flex justify-between">
+            <Button variant="outline" onClick={handleSignOut} disabled={profileLoading}>
+              Sign Out
+            </Button>
+            <Button onClick={updateProfile} disabled={profileLoading}>
+              {profileLoading ? "Saving..." : "Save"}
+            </Button>
+          </CardFooter>
+        </Card>
+      </main>
     </div>
   );
 };
