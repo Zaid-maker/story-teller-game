@@ -50,7 +50,7 @@ export const storyData: Story = {
     ],
   },
   "aroundLake": {
-    id:aroundLake: "aroundLake",
+    id: "aroundLake",
     text: "You walk around the lake, finding a small cave hidden behind a waterfall. Inside, you see ancient carvings on the walls.",
     choices: [
       { text: "Enter the cave", nextSceneId: "caveEnd" },
