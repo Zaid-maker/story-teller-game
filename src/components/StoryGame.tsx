@@ -4,14 +4,20 @@ import SceneDisplay from "./SceneDisplay";
 import { Button } from "@/components/ui/button";
 
 const StoryGame: React.FC = () => {
-  const [currentSceneId, setCurrentSceneId] = useState<string>("start");
+  const [sceneHistory, setSceneHistory] = useState<string[]>(["start"]);
+
+  const currentSceneId = sceneHistory[sceneHistory.length - 1];
 
   const handleChoice = (nextSceneId: string) => {
-    setCurrentSceneId(nextSceneId);
+    setSceneHistory((prevHistory) => [...prevHistory, nextSceneId]);
+  };
+
+  const handleGoBack = () => {
+    setSceneHistory((prevHistory) => prevHistory.slice(0, prevHistory.length - 1));
   };
 
   const restartGame = () => {
-    setCurrentSceneId("start");
+    setSceneHistory(["start"]);
   };
 
   const currentScene = storyData[currentSceneId];
@@ -31,15 +37,26 @@ const StoryGame: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       <SceneDisplay scene={currentScene} onChoice={handleChoice} />
-      {currentSceneId !== "start" && (
-        <Button
-          variant="outline"
-          className="mt-8 px-6 py-3 text-lg"
-          onClick={restartGame}
-        >
-          Restart Game
-        </Button>
-      )}
+      <div className="flex gap-4 mt-8">
+        {sceneHistory.length > 1 && (
+          <Button
+            variant="outline"
+            className="px-6 py-3 text-lg"
+            onClick={handleGoBack}
+          >
+            Go Back
+          </Button>
+        )}
+        {currentSceneId !== "start" && (
+          <Button
+            variant="outline"
+            className="px-6 py-3 text-lg"
+            onClick={restartGame}
+          >
+            Restart Game
+          </Button>
+        )}
+      </div>
     </div>
   );
 };
