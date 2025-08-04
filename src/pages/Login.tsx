@@ -26,9 +26,9 @@ const Login = () => {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-      <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow-md dark:bg-gray-800">
-        <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-white">
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="w-full max-w-md p-8 space-y-8 bg-card rounded-lg shadow-md">
+        <h2 className="text-2xl font-bold text-center text-card-foreground">
           Join the Adventure
         </h2>
         <Auth

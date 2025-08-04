@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Leaderboard from "@/components/Leaderboard";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const Index = () => {
   const { session } = useAuth();
@@ -26,8 +27,9 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
-      <div className="absolute top-4 right-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
+      <div className="absolute top-4 right-4 flex items-center gap-4">
+        <ThemeToggle />
         <Link to="/account">
           <Button variant="outline">Account</Button>
         </Link>
