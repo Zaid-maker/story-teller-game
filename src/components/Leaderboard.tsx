@@ -9,7 +9,7 @@ interface Score {
     score: number;
     profiles: {
         username: string;
-    } | null;
+    };
 }
 
 const Leaderboard = ({ refreshKey }: { refreshKey: number }) => {
@@ -18,16 +18,19 @@ const Leaderboard = ({ refreshKey }: { refreshKey: number }) => {
 
     const fetchScores = useCallback(async () => {
         setLoading(true);
+        // By using `!inner`, we create a more explicit join to the profiles table.
         const { data, error } = await supabase
             .from('game_scores')
-            .select('score, profiles(username)')
+            .select('score, profiles!inner(username)')
             .order('score', { ascending: false })
             .limit(10);
 
         if (error) {
             console.error('Error fetching scores:', error);
         } else if (data) {
-            setScores(data as any);
+            // We filter out any potential null profiles just to be safe.
+            const validScores = data.filter(s => s.profiles) as Score[];
+            setScores(validScores);
         }
         setLoading(false);
     }, []);
@@ -63,7 +66,7 @@ const Leaderboard = ({ refreshKey }: { refreshKey: number }) => {
                             {scores.map((score, index) => (
                                 <TableRow key={index}>
                                     <TableCell className="font-medium">{index + 1}</TableCell>
-                                    <TableCell>{score.profiles?.username || 'Anonymous'}</TableCell>
+                                    <TableCell>{score.profiles.username || 'Anonymous'}</TableCell>
                                     <TableCell className="text-right">{score.score}</TableCell>
                                 </TableRow>
                             ))}
