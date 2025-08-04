@@ -50,7 +50,7 @@ export const storyData: Story = {
     ],
   },
   "aroundLake": {
-    id: "aroundLake",
+    id:aroundLake: "aroundLake",
     text: "You walk around the lake, finding a small cave hidden behind a waterfall. Inside, you see ancient carvings on the walls.",
     choices: [
       { text: "Enter the cave", nextSceneId: "caveEnd" },
@@ -63,6 +63,7 @@ export const storyData: Story = {
     choices: [
       { text: "Thank the dryad and continue your journey", nextSceneId: "endGame" },
     ],
+    score: 100,
   },
   "askSong": {
     id: "askSong",
@@ -70,6 +71,7 @@ export const storyData: Story = {
     choices: [
       { text: "Thank the dryad and continue your journey", nextSceneId: "endGame" },
     ],
+    score: 100,
   },
   "gladeEnd": {
     id: "gladeEnd",
@@ -77,6 +79,7 @@ export const storyData: Story = {
     choices: [
       { text: "Return to the crossroads", nextSceneId: "start" },
     ],
+    score: 50,
   },
   "powerEnd": {
     id: "powerEnd",
@@ -84,6 +87,7 @@ export const storyData: Story = {
     choices: [
       { text: "Start a new adventure", nextSceneId: "start" },
     ],
+    score: 150,
   },
   "caveEnd": {
     id: "caveEnd",
@@ -91,6 +95,7 @@ export const storyData: Story = {
     choices: [
       { text: "Return to the crossroads", nextSceneId: "start" },
     ],
+    score: 75,
   },
   "endGame": {
     id: "endGame",

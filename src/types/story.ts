@@ -7,6 +7,7 @@ export interface Scene {
   id: string;
   text: string;
   choices: Choice[];
+  score?: number;
 }
 
 export type Story = Record<string, Scene>;

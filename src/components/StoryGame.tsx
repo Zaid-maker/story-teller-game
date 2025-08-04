@@ -2,13 +2,50 @@ import React, { useState } from "react";
 import { storyData } from "@/data/storyData";
 import SceneDisplay from "./SceneDisplay";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/components/AuthProvider";
+import { supabase } from "@/integrations/supabase/client";
+import { showSuccess, showError } from "@/utils/toast";
 
-const StoryGame: React.FC = () => {
+interface StoryGameProps {
+  onGameEnd: () => void;
+}
+
+const StoryGame: React.FC<StoryGameProps> = ({ onGameEnd }) => {
   const [sceneHistory, setSceneHistory] = useState<string[]>(["start"]);
+  const { user } = useAuth();
 
   const currentSceneId = sceneHistory[sceneHistory.length - 1];
 
-  const handleChoice = (nextSceneId: string) => {
+  const updateScore = async (score: number) => {
+    if (!user) return;
+
+    const { data: existingScoreData } = await supabase
+      .from('game_scores')
+      .select('score')
+      .eq('user_id', user.id)
+      .single();
+
+    const existingScore = existingScoreData?.score || 0;
+
+    if (score > existingScore) {
+      const { error } = await supabase
+        .from('game_scores')
+        .upsert({ user_id: user.id, score }, { onConflict: 'user_id' });
+
+      if (error) {
+        showError(error.message);
+      } else {
+        showSuccess(`New high score: ${score}!`);
+        onGameEnd();
+      }
+    }
+  };
+
+  const handleChoice = async (nextSceneId: string) => {
+    const nextScene = storyData[nextSceneId];
+    if (nextScene?.score) {
+      await updateScore(nextScene.score);
+    }
     setSceneHistory((prevHistory) => [...prevHistory, nextSceneId]);
   };
 
@@ -35,7 +72,7 @@ const StoryGame: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+    <div className="w-full flex flex-col items-center justify-center">
       <SceneDisplay scene={currentScene} onChoice={handleChoice} />
       <div className="flex gap-4 mt-8">
         {sceneHistory.length > 1 && (
