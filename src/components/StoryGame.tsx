@@ -47,16 +47,19 @@ const StoryGame: React.FC = () => {
             Go Back
           </Button>
         )}
-        {currentSceneId !== "start" && (
-          <Button
-            variant="outline"
-            className="px-6 py-3 text-lg"
-            onClick={restartGame}
-          >
-            Restart Game
-          </Button>
-        )}
+        <Button
+          variant="outline"
+          className="px-6 py-3 text-lg"
+          onClick={restartGame}
+        >
+          Restart Game
+        </Button>
       </div>
+      {currentSceneId === "start" && (
+        <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
+          You are at the beginning of your adventure.
+        </p>
+      )}
     </div>
   );
 };
