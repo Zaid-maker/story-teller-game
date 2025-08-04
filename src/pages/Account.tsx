@@ -9,47 +9,51 @@ import { useNavigate } from "react-router-dom";
 import { showSuccess, showError } from "@/utils/toast";
 
 const Account = () => {
-  const { user, session } = useAuth();
+  const { user, session, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(true);
   const [username, setUsername] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!session) {
+    if (!authLoading && !session) {
       navigate("/login");
-    } else {
+    }
+  }, [authLoading, session, navigate]);
+
+  useEffect(() => {
+    const getProfile = async () => {
+      try {
+        setProfileLoading(true);
+        if (!user) throw new Error("No user");
+
+        const { data, error, status } = await supabase
+          .from("profiles")
+          .select(`username`)
+          .eq("id", user.id)
+          .single();
+
+        if (error && status !== 406) {
+          throw error;
+        }
+
+        if (data) {
+          setUsername(data.username);
+        }
+      } catch (error: any) {
+        showError(error.message);
+      } finally {
+        setProfileLoading(false);
+      }
+    };
+
+    if (user) {
       getProfile();
     }
-  }, [session, navigate]);
-
-  const getProfile = async () => {
-    try {
-      setLoading(true);
-      if (!user) throw new Error("No user");
-
-      const { data, error, status } = await supabase
-        .from("profiles")
-        .select(`username`)
-        .eq("id", user.id)
-        .single();
-
-      if (error && status !== 406) {
-        throw error;
-      }
-
-      if (data) {
-        setUsername(data.username);
-      }
-    } catch (error: any) {
-      showError(error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [user]);
 
   const updateProfile = async () => {
     try {
-      setLoading(true);
+      setProfileLoading(true);
       if (!user) throw new Error("No user");
 
       const updates = {
@@ -67,7 +71,7 @@ const Account = () => {
     } catch (error: any) {
       showError(error.message);
     } finally {
-      setLoading(false);
+      setProfileLoading(false);
     }
   };
 
@@ -79,6 +83,14 @@ const Account = () => {
       navigate("/login");
     }
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <p>Loading session...</p>
+      </div>
+    );
+  }
 
   if (!session) return null;
 
@@ -97,17 +109,17 @@ const Account = () => {
               type="text"
               value={username || ""}
               onChange={(e) => setUsername(e.target.value)}
-              disabled={loading}
+              disabled={profileLoading}
             />
              <p className="text-sm text-muted-foreground">This will be your name on the leaderboard.</p>
           </div>
         </CardContent>
         <CardFooter className="flex justify-between">
-          <Button variant="outline" onClick={handleSignOut} disabled={loading}>
+          <Button variant="outline" onClick={handleSignOut} disabled={profileLoading}>
             Sign Out
           </Button>
-          <Button onClick={updateProfile} disabled={loading}>
-            {loading ? "Saving..." : "Save"}
+          <Button onClick={updateProfile} disabled={profileLoading}>
+            {profileLoading ? "Saving..." : "Save"}
           </Button>
         </CardFooter>
       </Card>

@@ -8,18 +8,26 @@ import Leaderboard from "@/components/Leaderboard";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 const Index = () => {
-  const { session } = useAuth();
+  const { session, loading } = useAuth();
   const navigate = useNavigate();
   const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
-    if (!session) {
+    if (!loading && !session) {
       navigate("/login");
     }
-  }, [session, navigate]);
+  }, [session, loading, navigate]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p>Loading...</p>
+      </div>
+    );
+  }
 
   if (!session) {
-    return null; // Or a loading spinner
+    return null;
   }
 
   const handleGameEnd = () => {
