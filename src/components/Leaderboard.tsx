@@ -14,7 +14,7 @@ interface Score {
     };
 }
 
-const Leaderboard = ({ refreshKey }: { refreshKey: number }) => {
+const Leaderboard = () => {
     const [scores, setScores] = useState<Score[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -31,7 +31,6 @@ const Leaderboard = ({ refreshKey }: { refreshKey: number }) => {
         } else if (data) {
             const validScores = data
                 .map((s) => {
-                    // Handle cases where profiles could be an object or an array
                     const profileData = Array.isArray(s.profiles) ? s.profiles[0] : s.profiles;
                     return { ...s, profiles: profileData };
                 })
@@ -43,7 +42,22 @@ const Leaderboard = ({ refreshKey }: { refreshKey: number }) => {
 
     useEffect(() => {
         fetchScores();
-    }, [fetchScores, refreshKey]);
+
+        const channel = supabase
+            .channel('realtime-scores')
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'game_scores' },
+                () => {
+                    fetchScores();
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [fetchScores]);
 
     return (
         <Card className="w-full max-w-md mt-8">

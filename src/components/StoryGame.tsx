@@ -8,7 +8,7 @@ import { storyData } from '@/data/storyData';
 import { Choice } from '@/types/story';
 import { Inventory } from './Inventory';
 
-const StoryGame = ({ onGameEnd }: { onGameEnd: () => void }) => {
+const StoryGame = () => {
     const { user } = useAuth();
 
     const [currentNodeKey, setCurrentNodeKey] = useState<string>(() => localStorage.getItem('adventureGame_node') || 'start');
@@ -63,12 +63,10 @@ const StoryGame = ({ onGameEnd }: { onGameEnd: () => void }) => {
             } else {
                 showSuccess(`You finished with a score of ${finalScore}, but didn't beat your high score.`);
             }
-
-            onGameEnd();
         } catch (err: any) {
             showError(err.message);
         }
-    }, [user, onGameEnd]);
+    }, [user]);
 
     useEffect(() => {
         if (gameEnded) {
