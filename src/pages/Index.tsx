@@ -1,7 +1,7 @@
 import { MadeWithDyad } from "@/components/made-with-dyad";
 import StoryGame from "@/components/StoryGame";
 import { useAuth } from "@/components/AuthProvider";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Leaderboard from "@/components/Leaderboard";
 import { Header } from "@/components/Header";
@@ -26,9 +26,9 @@ const Index = () => {
     return null;
   }
 
-  const handleGameEnd = () => {
+  const handleGameEnd = useCallback(() => {
     setRefreshKey(prevKey => prevKey + 1);
-  };
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
