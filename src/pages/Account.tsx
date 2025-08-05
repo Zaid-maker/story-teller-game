@@ -8,12 +8,14 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useNavigate } from "react-router-dom";
 import { showSuccess, showError } from "@/utils/toast";
 import { Header } from "@/components/Header";
+import { AvatarUpload } from "@/components/AvatarUpload";
 
 const Account = () => {
   const { user, session, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [profileLoading, setProfileLoading] = useState(true);
   const [username, setUsername] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !session) {
@@ -29,7 +31,7 @@ const Account = () => {
 
         const { data, error, status } = await supabase
           .from("profiles")
-          .select(`username`)
+          .select(`username, avatar_url`)
           .eq("id", user.id)
           .single();
 
@@ -39,6 +41,7 @@ const Account = () => {
 
         if (data) {
           setUsername(data.username);
+          setAvatarUrl(data.avatar_url);
         }
       } catch (error: any) {
         showError(error.message);
@@ -52,14 +55,15 @@ const Account = () => {
     }
   }, [user]);
 
-  const updateProfile = async () => {
+  const updateProfile = async (profileData: { username: string | null, avatar_url: string | null }) => {
     try {
       setProfileLoading(true);
       if (!user) throw new Error("No user");
 
       const updates = {
         id: user.id,
-        username,
+        username: profileData.username,
+        avatar_url: profileData.avatar_url,
         updated_at: new Date(),
       };
 
@@ -93,7 +97,7 @@ const Account = () => {
     );
   }
 
-  if (!session) return null;
+  if (!session || !user) return null;
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -104,7 +108,15 @@ const Account = () => {
             <CardTitle>Account</CardTitle>
             <CardDescription>Update your account settings. Your email is {user?.email}</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
+            <AvatarUpload
+              userId={user.id}
+              url={avatarUrl}
+              onUpload={(url) => {
+                setAvatarUrl(url);
+                updateProfile({ username, avatar_url: url });
+              }}
+            />
             <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
               <Input
@@ -121,8 +133,8 @@ const Account = () => {
             <Button variant="outline" onClick={handleSignOut} disabled={profileLoading}>
               Sign Out
             </Button>
-            <Button onClick={updateProfile} disabled={profileLoading}>
-              {profileLoading ? "Saving..." : "Save"}
+            <Button onClick={() => updateProfile({ username, avatar_url: avatarUrl })} disabled={profileLoading}>
+              {profileLoading ? "Saving..." : "Save Changes"}
             </Button>
           </CardFooter>
         </Card>
