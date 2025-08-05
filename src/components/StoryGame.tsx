@@ -6,6 +6,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from './ui/card'
 import { showSuccess, showError } from '@/utils/toast';
 import { storyData } from '@/data/storyData';
 import { Choice } from '@/types/story';
+import { Inventory } from './Inventory';
 
 const StoryGame = ({ onGameEnd }: { onGameEnd: () => void }) => {
     const { user } = useAuth();
@@ -97,6 +98,9 @@ const StoryGame = ({ onGameEnd }: { onGameEnd: () => void }) => {
             </CardHeader>
             <CardContent className="min-h-[250px] p-6 text-lg">
                 <p className="whitespace-pre-wrap">{currentNode?.text}</p>
+                
+                {!gameEnded && <Inventory items={inventory} />}
+
                 {gameEnded && (
                     <div className="mt-4 text-center">
                         <p className="text-2xl font-semibold">Game Over!</p>
