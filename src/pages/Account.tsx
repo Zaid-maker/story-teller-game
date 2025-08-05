@@ -56,15 +56,15 @@ const Account = () => {
     }
   }, [user]);
 
-  const updateProfile = async (profileData: { username: string | null, avatar_url: string | null }) => {
+  const updateProfile = async () => {
     try {
       setProfileLoading(true);
       if (!user) throw new Error("No user");
 
       const updates = {
         id: user.id,
-        username: profileData.username,
-        avatar_url: profileData.avatar_url,
+        username: username,
+        avatar_url: avatarUrl,
         updated_at: new Date(),
       };
 
@@ -111,7 +111,6 @@ const Account = () => {
               url={avatarUrl}
               onUpload={(url) => {
                 setAvatarUrl(url);
-                updateProfile({ username, avatar_url: url });
               }}
             />
             <div className="space-y-2">
@@ -130,7 +129,7 @@ const Account = () => {
             <Button variant="outline" onClick={handleSignOut} disabled={profileLoading}>
               Sign Out
             </Button>
-            <Button onClick={() => updateProfile({ username, avatar_url: avatarUrl })} disabled={profileLoading}>
+            <Button onClick={updateProfile} disabled={profileLoading}>
               {profileLoading ? "Saving..." : "Save Changes"}
             </Button>
           </CardFooter>

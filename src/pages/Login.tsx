@@ -15,7 +15,7 @@ const Login = () => {
 
   useEffect(() => {
     if (!loading && session) {
-      navigate("/game");
+      navigate("/");
     }
   }, [session, loading, navigate]);
 
@@ -38,7 +38,7 @@ const Login = () => {
             appearance={{ theme: ThemeSupa }}
             theme={theme === "dark" ? "dark" : "light"}
             providers={[]}
-            redirectTo={`${window.location.origin}/game`}
+            redirectTo={`${window.location.origin}/`}
           />
         </CardContent>
       </Card>
