@@ -30,7 +30,11 @@ const Leaderboard = ({ refreshKey }: { refreshKey: number }) => {
             console.error('Error fetching scores:', error);
         } else if (data) {
             const validScores = data
-                .map((s) => ({ ...s, profiles: (s.profiles as any)?.[0] }))
+                .map((s) => {
+                    // Handle cases where profiles could be an object or an array
+                    const profileData = Array.isArray(s.profiles) ? s.profiles[0] : s.profiles;
+                    return { ...s, profiles: profileData };
+                })
                 .filter((s): s is Score => !!s.profiles);
             setScores(validScores);
         }
