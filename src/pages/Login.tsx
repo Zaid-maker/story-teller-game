@@ -20,7 +20,7 @@ const Login = () => {
 
   useEffect(() => {
     if (!loading && session) {
-      navigate("/");
+      navigate("/game");
     }
   }, [session, loading, navigate]);
 
