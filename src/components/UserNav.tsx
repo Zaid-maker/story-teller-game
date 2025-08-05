@@ -51,7 +51,11 @@ export const UserNav = () => {
   };
 
   if (!user) {
-    return null;
+    return (
+      <Button asChild>
+        <Link to="/login">Login</Link>
+      </Button>
+    );
   }
 
   return (
