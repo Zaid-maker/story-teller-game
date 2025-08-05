@@ -4,17 +4,60 @@ import { useAuth } from './AuthProvider';
 import { Button } from './ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { showSuccess, showError } from '@/utils/toast';
-import { storyData } from '@/data/storyData';
-import { Choice } from '@/types/story';
+import { Choice, Story } from '@/types/story';
 import { Inventory } from './Inventory';
+import { Skeleton } from './ui/skeleton';
 
 const StoryGame = () => {
     const { user } = useAuth();
+
+    const [storyData, setStoryData] = useState<Story | null>(null);
+    const [storyLoading, setStoryLoading] = useState(true);
 
     const [currentNodeKey, setCurrentNodeKey] = useState<string>(() => localStorage.getItem('adventureGame_node') || 'start');
     const [score, setScore] = useState<number>(() => parseInt(localStorage.getItem('adventureGame_score') || '0', 10));
     const [inventory, setInventory] = useState<string[]>(() => JSON.parse(localStorage.getItem('adventureGame_inventory') || '[]'));
     const [gameEnded, setGameEnded] = useState<boolean>(() => localStorage.getItem('adventureGame_ended') === 'true');
+
+    useEffect(() => {
+        const fetchStory = async () => {
+            setStoryLoading(true);
+            try {
+                const { data: scenesData, error: scenesError } = await supabase
+                    .from('scenes')
+                    .select('*');
+
+                if (scenesError) throw scenesError;
+
+                const { data: choicesData, error: choicesError } = await supabase
+                    .from('choices')
+                    .select('*');
+
+                if (choicesError) throw choicesError;
+
+                const reconstructedStory: Story = {};
+                for (const scene of scenesData) {
+                    reconstructedStory[scene.id] = {
+                        ...scene,
+                        choices: choicesData
+                            .filter(c => c.scene_id === scene.id)
+                            .map(c => ({
+                                text: c.text,
+                                nextSceneId: c.next_scene_id,
+                                requires: c.requires,
+                            })),
+                    };
+                }
+                setStoryData(reconstructedStory);
+            } catch (err: any) {
+                showError(`Failed to load story: ${err.message}`);
+            } finally {
+                setStoryLoading(false);
+            }
+        };
+
+        fetchStory();
+    }, []);
 
     useEffect(() => {
         localStorage.setItem('adventureGame_node', currentNodeKey);
@@ -88,6 +131,8 @@ const StoryGame = () => {
     }, [clearSavedGameState]);
 
     const handleChoice = (choice: Choice) => {
+        if (!storyData) return;
+
         const nextNodeKey = choice.nextSceneId;
         const nextNode = storyData[nextNodeKey];
 
@@ -114,7 +159,28 @@ const StoryGame = () => {
         }
     };
 
-    const currentNode = storyData[currentNodeKey];
+    if (storyLoading) {
+        return (
+            <Card className="w-full shadow-lg">
+                <CardHeader>
+                    <CardTitle className="text-center text-2xl font-bold">Adventure Quest</CardTitle>
+                </CardHeader>
+                <CardContent className="min-h-[250px] p-6 space-y-4">
+                    <Skeleton className="h-6 w-full" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-3/4" />
+                </CardContent>
+                <CardFooter className="flex flex-col gap-4 p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-lg mx-auto">
+                        <Skeleton className="h-12 w-full" />
+                        <Skeleton className="h-12 w-full" />
+                    </div>
+                </CardFooter>
+            </Card>
+        );
+    }
+
+    const currentNode = storyData ? storyData[currentNodeKey] : null;
     const availableChoices = currentNode?.choices?.filter(choice => {
         return !choice.requires || inventory.includes(choice.requires);
     });
