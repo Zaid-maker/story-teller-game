@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Swords } from "lucide-react";
+import { UserNav } from "./UserNav";
 
 export const Header = () => {
   return (
@@ -12,10 +12,8 @@ export const Header = () => {
           <span>Adventure Quest</span>
         </Link>
         <div className="flex items-center gap-4">
-          <Link to="/account">
-            <Button variant="ghost">Account</Button>
-          </Link>
           <ThemeToggle />
+          <UserNav />
         </div>
       </div>
     </header>
