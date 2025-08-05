@@ -5,8 +5,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { showSuccess, showError } from "@/utils/toast";
 
 const Login = () => {
@@ -16,6 +15,7 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [formLoading, setFormLoading] = useState(false);
+  const [isSigningUp, setIsSigningUp] = useState(false);
 
   useEffect(() => {
     if (!loading && session) {
@@ -32,8 +32,6 @@ const Login = () => {
     });
     if (error) {
       showError(error.message);
-    } else {
-      // The onAuthStateChange listener in AuthProvider will handle navigation
     }
     setFormLoading(false);
   };
@@ -68,62 +66,80 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Tabs defaultValue="signin" className="w-full max-w-md">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="signin">Sign In</TabsTrigger>
-          <TabsTrigger value="signup">Sign Up</TabsTrigger>
-        </TabsList>
-        <TabsContent value="signin">
-          <Card>
-            <CardHeader>
-              <CardTitle>Welcome Back!</CardTitle>
-              <CardDescription>Sign in to continue your adventure.</CardDescription>
-            </CardHeader>
-            <form onSubmit={handleSignIn}>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signin-email">Email</Label>
-                  <Input id="signin-email" type="email" placeholder="m@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signin-password">Password</Label>
-                  <Input id="signin-password" type="password" placeholder="••••••••" required value={password} onChange={(e) => setPassword(e.target.value)} />
-                </div>
-                <Button type="submit" className="w-full" disabled={formLoading}>
-                  {formLoading ? "Signing In..." : "Sign In"}
-                </Button>
-              </CardContent>
-            </form>
-          </Card>
-        </TabsContent>
-        <TabsContent value="signup">
-          <Card>
-            <CardHeader>
-              <CardTitle>Join the Adventure</CardTitle>
-              <CardDescription>Create an account to start playing.</CardDescription>
-            </CardHeader>
-            <form onSubmit={handleSignUp}>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signup-username">Username</Label>
-                  <Input id="signup-username" type="text" placeholder="adventurer" required value={username} onChange={(e) => setUsername(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
-                  <Input id="signup-email" type="email" placeholder="m@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
-                  <Input id="signup-password" type="password" placeholder="••••••••" required value={password} onChange={(e) => setPassword(e.target.value)} />
-                </div>
-                <Button type="submit" className="w-full" disabled={formLoading}>
-                  {formLoading ? "Creating Account..." : "Sign Up"}
-                </Button>
-              </CardContent>
-            </form>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl">
+            {isSigningUp ? "Join the Adventure" : "Welcome Back!"}
+          </CardTitle>
+          <CardDescription>
+            {isSigningUp
+              ? "Create an account to start playing."
+              : "Sign in to continue your adventure."}
+          </CardDescription>
+        </CardHeader>
+        <form onSubmit={isSigningUp ? handleSignUp : handleSignIn}>
+          <CardContent className="space-y-4">
+            {isSigningUp && (
+              <div className="space-y-2">
+                <Label htmlFor="username">Username</Label>
+                <Input
+                  id="username"
+                  type="text"
+                  placeholder="adventurer"
+                  required
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                />
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="m@example.com"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+            <Button type="submit" className="w-full" disabled={formLoading}>
+              {formLoading
+                ? isSigningUp
+                  ? "Creating Account..."
+                  : "Signing In..."
+                : isSigningUp
+                ? "Sign Up"
+                : "Sign In"}
+            </Button>
+          </CardContent>
+        </form>
+        <CardFooter>
+          <p className="w-full text-center text-sm text-muted-foreground">
+            {isSigningUp
+              ? "Already have an account? "
+              : "Don't have an account? "}
+            <button
+              type="button"
+              onClick={() => setIsSigningUp(!isSigningUp)}
+              className="font-medium text-primary underline-offset-4 hover:underline"
+            >
+              {isSigningUp ? "Sign In" : "Sign Up"}
+            </button>
+          </p>
+        </CardFooter>
+      </Card>
     </div>
   );
 };
