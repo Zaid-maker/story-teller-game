@@ -1,27 +1,11 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Header } from "@/components/Header";
 import { MadeWithDyad } from "@/components/made-with-dyad";
-import { useAuth } from "@/components/AuthProvider";
 import { Swords, BookOpenText, Trophy, UserCircle, LogIn, Gamepad2, Crown } from "lucide-react";
-import { useEffect } from "react";
-import { PageLoader } from "@/components/PageLoader";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Header } from "@/components/Header";
 
-const Landing = () => {
-  const { session, loading } = useAuth();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!loading && session) {
-      navigate("/game");
-    }
-  }, [session, loading, navigate]);
-
-  if (loading || session) {
-    return <PageLoader />;
-  }
-
+export const UnauthenticatedApp = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
@@ -125,5 +109,3 @@ const Landing = () => {
     </div>
   );
 };
-
-export default Landing;
