@@ -82,8 +82,8 @@ const StoryGame = () => {
         localStorage.removeItem('adventureGame_ended');
     }, []);
 
-    const saveScore = useCallback(async (finalScore: number) => {
-        if (!user || finalScore === 0) return;
+    const saveScore = useCallback(async (finalScore: number, endingSceneId: string) => {
+        if (!user) return;
 
         try {
             const { data: existingScore, error: selectError } = await supabase
@@ -99,11 +99,11 @@ const StoryGame = () => {
             if (!existingScore || finalScore > existingScore.score) {
                 const { error: upsertError } = await supabase
                     .from('game_scores')
-                    .upsert({ user_id: user.id, score: finalScore }, { onConflict: 'user_id' });
+                    .upsert({ user_id: user.id, score: finalScore, ending_scene_id: endingSceneId }, { onConflict: 'user_id' });
 
                 if (upsertError) throw upsertError;
                 showSuccess(`New high score saved: ${finalScore}!`);
-            } else {
+            } else if (finalScore > 0) {
                 showSuccess(`You finished with a score of ${finalScore}, but didn't beat your high score.`);
             }
         } catch (err: any) {
@@ -115,11 +115,11 @@ const StoryGame = () => {
         if (gameEnded) {
             const hasBeenSaved = localStorage.getItem('adventureGame_score_saved') === score.toString();
             if (!hasBeenSaved) {
-                saveScore(score);
+                saveScore(score, currentNodeKey);
                 localStorage.setItem('adventureGame_score_saved', score.toString());
             }
         }
-    }, [gameEnded, score, saveScore]);
+    }, [gameEnded, score, currentNodeKey, saveScore]);
 
     const restartGame = useCallback(() => {
         clearSavedGameState();
