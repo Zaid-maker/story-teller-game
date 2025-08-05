@@ -10,10 +10,34 @@ import { Inventory } from './Inventory';
 
 const StoryGame = ({ onGameEnd }: { onGameEnd: () => void }) => {
     const { user } = useAuth();
-    const [currentNodeKey, setCurrentNodeKey] = useState<string>('start');
-    const [score, setScore] = useState(0);
-    const [inventory, setInventory] = useState<string[]>([]);
-    const [gameEnded, setGameEnded] = useState(false);
+
+    const [currentNodeKey, setCurrentNodeKey] = useState<string>(() => localStorage.getItem('adventureGame_node') || 'start');
+    const [score, setScore] = useState<number>(() => parseInt(localStorage.getItem('adventureGame_score') || '0', 10));
+    const [inventory, setInventory] = useState<string[]>(() => JSON.parse(localStorage.getItem('adventureGame_inventory') || '[]'));
+    const [gameEnded, setGameEnded] = useState<boolean>(() => localStorage.getItem('adventureGame_ended') === 'true');
+
+    useEffect(() => {
+        localStorage.setItem('adventureGame_node', currentNodeKey);
+    }, [currentNodeKey]);
+
+    useEffect(() => {
+        localStorage.setItem('adventureGame_score', score.toString());
+    }, [score]);
+
+    useEffect(() => {
+        localStorage.setItem('adventureGame_inventory', JSON.stringify(inventory));
+    }, [inventory]);
+
+    useEffect(() => {
+        localStorage.setItem('adventureGame_ended', gameEnded.toString());
+    }, [gameEnded]);
+
+    const clearSavedGameState = useCallback(() => {
+        localStorage.removeItem('adventureGame_node');
+        localStorage.removeItem('adventureGame_score');
+        localStorage.removeItem('adventureGame_inventory');
+        localStorage.removeItem('adventureGame_ended');
+    }, []);
 
     const saveScore = useCallback(async (finalScore: number) => {
         if (!user || finalScore === 0) return;
@@ -48,9 +72,22 @@ const StoryGame = ({ onGameEnd }: { onGameEnd: () => void }) => {
 
     useEffect(() => {
         if (gameEnded) {
-            saveScore(score);
+            const hasBeenSaved = localStorage.getItem('adventureGame_score_saved') === score.toString();
+            if (!hasBeenSaved) {
+                saveScore(score);
+                localStorage.setItem('adventureGame_score_saved', score.toString());
+            }
         }
     }, [gameEnded, score, saveScore]);
+
+    const restartGame = useCallback(() => {
+        clearSavedGameState();
+        localStorage.removeItem('adventureGame_score_saved');
+        setCurrentNodeKey('start');
+        setScore(0);
+        setInventory([]);
+        setGameEnded(false);
+    }, [clearSavedGameState]);
 
     const handleChoice = (choice: Choice) => {
         const nextNodeKey = choice.nextSceneId;
@@ -78,13 +115,6 @@ const StoryGame = ({ onGameEnd }: { onGameEnd: () => void }) => {
             setGameEnded(true);
         }
     };
-
-    const restartGame = useCallback(() => {
-        setCurrentNodeKey('start');
-        setScore(0);
-        setInventory([]);
-        setGameEnded(false);
-    }, []);
 
     const currentNode = storyData[currentNodeKey];
     const availableChoices = currentNode?.choices?.filter(choice => {
