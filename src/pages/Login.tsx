@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { showSuccess, showError } from "@/utils/toast";
+import { PageLoader } from "@/components/PageLoader";
 
 const Login = () => {
   const { session, loading } = useAuth();
@@ -57,11 +58,7 @@ const Login = () => {
   };
 
   if (loading || session) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <p>Loading...</p>
-      </div>
-    );
+    return <PageLoader />;
   }
 
   return (

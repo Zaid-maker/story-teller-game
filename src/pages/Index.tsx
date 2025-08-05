@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Leaderboard from "@/components/Leaderboard";
 import { Header } from "@/components/Header";
+import { PageLoader } from "@/components/PageLoader";
 
 const Index = () => {
   const { session, loading } = useAuth();
@@ -18,11 +19,7 @@ const Index = () => {
   }, [session, loading, navigate]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>Loading...</p>
-      </div>
-    );
+    return <PageLoader />;
   }
 
   if (!session) {

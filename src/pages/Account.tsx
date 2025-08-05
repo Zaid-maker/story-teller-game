@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { showSuccess, showError } from "@/utils/toast";
 import { Header } from "@/components/Header";
 import { AvatarUpload } from "@/components/AvatarUpload";
+import { PageLoader } from "@/components/PageLoader";
 
 const Account = () => {
   const { user, session, loading: authLoading } = useAuth();
@@ -90,11 +91,7 @@ const Account = () => {
   };
 
   if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <p>Loading session...</p>
-      </div>
-    );
+    return <PageLoader />;
   }
 
   if (!session || !user) return null;
