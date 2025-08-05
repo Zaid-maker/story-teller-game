@@ -11,6 +11,7 @@ const StoryGame = ({ onGameEnd }: { onGameEnd: () => void }) => {
     const { user } = useAuth();
     const [currentNodeKey, setCurrentNodeKey] = useState<string>('start');
     const [score, setScore] = useState(0);
+    const [inventory, setInventory] = useState<string[]>([]);
     const [gameEnded, setGameEnded] = useState(false);
 
     const saveScore = useCallback(async (finalScore: number) => {
@@ -63,6 +64,10 @@ const StoryGame = ({ onGameEnd }: { onGameEnd: () => void }) => {
         
         setCurrentNodeKey(nextNodeKey);
 
+        if (nextNode.gives) {
+            setInventory(prev => [...new Set([...prev, nextNode.gives!])]);
+        }
+
         if (nextNode.score) {
             setScore(prev => prev + (nextNode.score || 0));
         }
@@ -76,10 +81,14 @@ const StoryGame = ({ onGameEnd }: { onGameEnd: () => void }) => {
     const restartGame = useCallback(() => {
         setCurrentNodeKey('start');
         setScore(0);
+        setInventory([]);
         setGameEnded(false);
     }, []);
 
     const currentNode = storyData[currentNodeKey];
+    const availableChoices = currentNode?.choices?.filter(choice => {
+        return !choice.requires || inventory.includes(choice.requires);
+    });
 
     return (
         <Card className="w-full shadow-lg">
@@ -97,7 +106,7 @@ const StoryGame = ({ onGameEnd }: { onGameEnd: () => void }) => {
             </CardContent>
             <CardFooter className="flex flex-col gap-4 p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-lg mx-auto">
-                    {currentNode?.choices?.map((choice, index) => (
+                    {availableChoices?.map((choice, index) => (
                         <Button
                             key={index}
                             onClick={() => handleChoice(choice)}

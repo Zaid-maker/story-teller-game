@@ -48,6 +48,7 @@ export const storyData: Story = {
       { text: "Seek out the gorge from your vision", nextSceneId: "seekGorge" },
       { text: "Keep the power and return to your path", nextSceneId: "keepPower" },
     ],
+    gives: "orb",
   },
   "aroundLake": {
     id: "aroundLake",
@@ -120,6 +121,7 @@ export const storyData: Story = {
       { text: "Continue your journey", nextSceneId: "seekGorge" },
     ],
     score: 50,
+    gives: "glowing_flower",
   },
   "leaveFlower": {
     id: "leaveFlower",
@@ -136,6 +138,7 @@ export const storyData: Story = {
       { text: "Go to the shadowy gorge", nextSceneId: "shadowyGorge" },
     ],
     score: 100,
+    gives: "flowers",
   },
   "useCharm": {
     id: "useCharm",
@@ -144,6 +147,7 @@ export const storyData: Story = {
       { text: "Go to the shadowy gorge", nextSceneId: "shadowyGorge" },
     ],
     score: 150,
+    gives: "enchanted_flowers",
   },
   "shadowyGorge": {
     id: "shadowyGorge",
@@ -157,8 +161,10 @@ export const storyData: Story = {
     id: "confrontShadow",
     text: "You step forward to face the darkness. How will you fight it?",
     choices: [
-      { text: "Unleash the orb's light (if you have it)", nextSceneId: "victory" },
-      { text: "Use the dryad's enchanted flowers (if you have them)", nextSceneId: "victory" },
+      { text: "Unleash the orb's light", nextSceneId: "victory", requires: "orb" },
+      { text: "Use the dryad's enchanted flowers", nextSceneId: "victory", requires: "enchanted_flowers" },
+      { text: "Use the Moonpetal flowers", nextSceneId: "victory", requires: "flowers" },
+      { text: "Use the glowing shrine flower", nextSceneId: "victory", requires: "glowing_flower" },
       { text: "Face it with your own courage", nextSceneId: "courageEnding" },
     ],
   },
