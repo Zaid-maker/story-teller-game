@@ -87,7 +87,7 @@ const Login = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signin-password">Password</Label>
-                  <Input id="signin-password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+                  <Input id="signin-password" type="password" placeholder="••••••••" required value={password} onChange={(e) => setPassword(e.target.value)} />
                 </div>
                 <Button type="submit" className="w-full" disabled={formLoading}>
                   {formLoading ? "Signing In..." : "Sign In"}
@@ -114,7 +114,7 @@ const Login = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signup-password">Password</Label>
-                  <Input id="signup-password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+                  <Input id="signup-password" type="password" placeholder="••••••••" required value={password} onChange={(e) => setPassword(e.target.value)} />
                 </div>
                 <Button type="submit" className="w-full" disabled={formLoading}>
                   {formLoading ? "Creating Account..." : "Sign Up"}
