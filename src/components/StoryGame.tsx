@@ -1,104 +1,164 @@
-import React, { useState } from "react";
-import { storyData } from "@/data/storyData";
-import SceneDisplay from "./SceneDisplay";
-import { Button } from "@/components/ui/button";
-import { useAuth } from "@/components/AuthProvider";
-import { supabase } from "@/integrations/supabase/client";
-import { showSuccess, showError } from "@/utils/toast";
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from './AuthProvider';
+import { Button } from './ui/button';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from './ui/card';
+import { Loader2 } from 'lucide-react';
+import { showSuccess, showError } from '@/utils/toast';
 
-interface StoryGameProps {
-  onGameEnd: () => void;
+interface Choice {
+    text: string;
+    target: string;
+    scoreChange?: number;
 }
 
-const StoryGame: React.FC<StoryGameProps> = ({ onGameEnd }) => {
-  const [sceneHistory, setSceneHistory] = useState<string[]>(["start"]);
-  const { user } = useAuth();
+interface StoryNode {
+    text: string;
+    choices?: Choice[];
+    end?: boolean;
+}
 
-  const currentSceneId = sceneHistory[sceneHistory.length - 1];
+interface StoryData {
+    title: string;
+    startNode: string;
+    nodes: Record<string, StoryNode>;
+}
 
-  const updateScore = async (score: number) => {
-    if (!user) return;
+const StoryGame = ({ onGameEnd }: { onGameEnd: () => void }) => {
+    const { user } = useAuth();
+    const [storyData, setStoryData] = useState<StoryData | null>(null);
+    const [currentNodeKey, setCurrentNodeKey] = useState<string>('start');
+    const [loading, setLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string | null>(null);
+    const [score, setScore] = useState(0);
+    const [gameEnded, setGameEnded] = useState(false);
 
-    const { data: existingScoreData } = await supabase
-      .from('game_scores')
-      .select('score')
-      .eq('user_id', user.id)
-      .single();
+    const fetchStory = useCallback(async () => {
+        try {
+            const response = await fetch('/story.json');
+            if (!response.ok) {
+                throw new Error('Failed to load story data.');
+            }
+            const data: StoryData = await response.json();
+            setStoryData(data);
+            setCurrentNodeKey(data.startNode);
+        } catch (err: any) {
+            setError(err.message);
+            showError('Could not load the adventure. Please try again later.');
+        } finally {
+            setLoading(false);
+        }
+    }, []);
 
-    const existingScore = existingScoreData?.score || 0;
+    useEffect(() => {
+        fetchStory();
+    }, [fetchStory]);
 
-    if (score > existingScore) {
-      const { error } = await supabase
-        .from('game_scores')
-        .upsert({ user_id: user.id, score }, { onConflict: 'user_id' });
+    const saveScore = useCallback(async (finalScore: number) => {
+        if (!user) return;
 
-      if (error) {
-        showError(error.message);
-      } else {
-        showSuccess(`New high score: ${score}!`);
-        onGameEnd();
-      }
+        try {
+            const { data: existingScore, error: selectError } = await supabase
+                .from('game_scores')
+                .select('score')
+                .eq('user_id', user.id)
+                .single();
+
+            if (selectError && selectError.code !== 'PGRST116') {
+                throw selectError;
+            }
+
+            if (!existingScore || finalScore > existingScore.score) {
+                const { error: upsertError } = await supabase
+                    .from('game_scores')
+                    .upsert({ user_id: user.id, score: finalScore }, { onConflict: 'user_id' });
+
+                if (upsertError) throw upsertError;
+                showSuccess('New high score saved!');
+            } else {
+                showSuccess('You finished, but did not beat your high score.');
+            }
+
+            onGameEnd();
+        } catch (err: any) {
+            showError(err.message);
+        }
+    }, [user, onGameEnd]);
+
+    useEffect(() => {
+        if (gameEnded) {
+            saveScore(score);
+        }
+    }, [gameEnded, score, saveScore]);
+
+    const handleChoice = (choice: Choice) => {
+        setScore(prev => prev + (choice.scoreChange || 0));
+        const nextNode = storyData?.nodes[choice.target];
+        if (nextNode?.end) {
+            setGameEnded(true);
+        }
+        setCurrentNodeKey(choice.target);
+    };
+
+    const restartGame = useCallback(() => {
+        if (!storyData) return;
+        setCurrentNodeKey(storyData.startNode);
+        setScore(0);
+        setGameEnded(false);
+    }, [storyData]);
+
+    const currentNode = storyData?.nodes[currentNodeKey];
+
+    if (loading) {
+        return <Card className="w-full min-h-[400px] flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></Card>;
     }
-  };
 
-  const handleChoice = async (nextSceneId: string) => {
-    const nextScene = storyData[nextSceneId];
-    if (nextScene?.score) {
-      await updateScore(nextScene.score);
+    if (error) {
+        return <Card className="w-full min-h-[400px] flex items-center justify-center"><p className="text-red-500">{error}</p></Card>;
     }
-    setSceneHistory((prevHistory) => [...prevHistory, nextSceneId]);
-  };
 
-  const handleGoBack = () => {
-    setSceneHistory((prevHistory) => prevHistory.slice(0, prevHistory.length - 1));
-  };
-
-  const restartGame = () => {
-    setSceneHistory(["start"]);
-  };
-
-  const currentScene = storyData[currentSceneId];
-
-  if (!currentScene) {
     return (
-      <div className="text-center p-8">
-        <h2 className="text-3xl font-bold text-red-500 mb-4">Error: Scene Not Found!</h2>
-        <p className="text-lg text-gray-600 dark:text-gray-400 mb-6">
-          The story tried to go to a scene that doesn't exist: "{currentSceneId}".
-        </p>
-        <Button onClick={restartGame}>Restart Game</Button>
-      </div>
+        <Card className="w-full shadow-lg">
+            <CardHeader>
+                <CardTitle className="text-center text-2xl font-bold">{storyData?.title}</CardTitle>
+            </CardHeader>
+            <CardContent className="min-h-[250px] p-6 text-lg">
+                <p className="whitespace-pre-wrap">{currentNode?.text}</p>
+                {gameEnded && (
+                    <div className="mt-4 text-center">
+                        <p className="text-2xl font-semibold">Game Over!</p>
+                        <p className="text-xl">Your final score is: {score}</p>
+                    </div>
+                )}
+            </CardContent>
+            <CardFooter className="flex flex-col gap-4 p-6">
+                {gameEnded ? (
+                    <Button className="w-full max-w-xs" onClick={restartGame}>Play Again</Button>
+                ) : (
+                    <>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-lg mx-auto">
+                            {currentNode?.choices?.map((choice: any) => (
+                                <Button
+                                    key={choice.target}
+                                    onClick={() => handleChoice(choice)}
+                                    className="w-full"
+                                >
+                                    {choice.text}
+                                </Button>
+                            ))}
+                        </div>
+                        <Button
+                            variant="outline"
+                            className="mt-4"
+                            onClick={restartGame}
+                        >
+                            Restart Game
+                        </Button>
+                    </>
+                )}
+            </CardFooter>
+        </Card>
     );
-  }
-
-  return (
-    <div className="w-full flex flex-col items-center justify-center">
-      <SceneDisplay scene={currentScene} onChoice={handleChoice} />
-      <div className="flex gap-4 mt-8">
-        {sceneHistory.length > 1 && (
-          <Button
-            variant="outline"
-            className="px-6 py-3 text-lg"
-            onClick={handleGoBack}
-          >
-            Go Back
-          </Button>
-        )}
-        <Button
-          variant="outline"
-          className="px-6 py-3 text-lg"
-          onClick={restartGame}
-        >
-          Restart Game
-        </Button>
-      </div>
-      {currentSceneId === "start" && (
-        <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
-          You are at the beginning of your adventure.
-        </p>
-      )}
-    </div>
-  );
 };
 
 export default StoryGame;
