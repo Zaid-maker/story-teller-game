@@ -12,9 +12,9 @@ import { AvatarUpload } from "@/components/AvatarUpload";
 import { PageLoader } from "@/components/PageLoader";
 
 const Account = () => {
-  const { user, session, loading: authLoading } = useAuth();
+  const { user, session, profile, refetchProfile, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [profileLoading, setProfileLoading] = useState(true);
+  const [updateLoading, setUpdateLoading] = useState(false);
   const [username, setUsername] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
@@ -25,40 +25,15 @@ const Account = () => {
   }, [authLoading, session, navigate]);
 
   useEffect(() => {
-    const getProfile = async () => {
-      try {
-        setProfileLoading(true);
-        if (!user) throw new Error("No user");
-
-        const { data, error, status } = await supabase
-          .from("profiles")
-          .select(`username, avatar_url`)
-          .eq("id", user.id)
-          .single();
-
-        if (error && status !== 406) {
-          throw error;
-        }
-
-        if (data) {
-          setUsername(data.username);
-          setAvatarUrl(data.avatar_url);
-        }
-      } catch (error: any) {
-        showError(error.message);
-      } finally {
-        setProfileLoading(false);
-      }
-    };
-
-    if (user) {
-      getProfile();
+    if (profile) {
+      setUsername(profile.username);
+      setAvatarUrl(profile.avatar_url);
     }
-  }, [user]);
+  }, [profile]);
 
   const updateProfile = async () => {
     try {
-      setProfileLoading(true);
+      setUpdateLoading(true);
       if (!user) throw new Error("No user");
 
       const updates = {
@@ -74,10 +49,11 @@ const Account = () => {
         throw error;
       }
       showSuccess("Profile updated successfully!");
+      refetchProfile();
     } catch (error: any) {
       showError(error.message);
     } finally {
-      setProfileLoading(false);
+      setUpdateLoading(false);
     }
   };
 
@@ -120,17 +96,17 @@ const Account = () => {
                 type="text"
                 value={username || ""}
                 onChange={(e) => setUsername(e.target.value)}
-                disabled={profileLoading}
+                disabled={updateLoading}
               />
                <p className="text-sm text-muted-foreground">This will be your name on the leaderboard.</p>
             </div>
           </CardContent>
           <CardFooter className="flex justify-between">
-            <Button variant="outline" onClick={handleSignOut} disabled={profileLoading}>
+            <Button variant="outline" onClick={handleSignOut} disabled={updateLoading}>
               Sign Out
             </Button>
-            <Button onClick={updateProfile} disabled={profileLoading}>
-              {profileLoading ? "Saving..." : "Save Changes"}
+            <Button onClick={updateProfile} disabled={updateLoading}>
+              {updateLoading ? "Saving..." : "Save Changes"}
             </Button>
           </CardFooter>
         </Card>
