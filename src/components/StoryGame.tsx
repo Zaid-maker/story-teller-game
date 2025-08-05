@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthProvider';
 import { Button } from './ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from './ui/card';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertTriangle } from 'lucide-react';
 import { showSuccess, showError } from '@/utils/toast';
 
 interface Choice {
@@ -34,6 +34,7 @@ const StoryGame = ({ onGameEnd }: { onGameEnd: () => void }) => {
     const [gameEnded, setGameEnded] = useState(false);
 
     const fetchStory = useCallback(async () => {
+        setError(null);
         try {
             const response = await fetch('/story.json');
             if (!response.ok) {
@@ -114,7 +115,17 @@ const StoryGame = ({ onGameEnd }: { onGameEnd: () => void }) => {
     }
 
     if (error) {
-        return <Card className="w-full min-h-[400px] flex items-center justify-center"><p className="text-red-500">{error}</p></Card>;
+        return (
+            <Card className="w-full min-h-[400px] flex flex-col items-center justify-center text-center p-4">
+                <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
+                <p className="text-destructive mb-4">
+                    Oops! We couldn't load the adventure.
+                </p>
+                <Button onClick={() => { setLoading(true); fetchStory(); }}>
+                    Try Again
+                </Button>
+            </Card>
+        );
     }
 
     return (
