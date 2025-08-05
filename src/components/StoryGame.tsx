@@ -101,7 +101,7 @@ const StoryGame = ({ onGameEnd }: { onGameEnd: () => void }) => {
                         <Button
                             key={index}
                             onClick={() => handleChoice(choice)}
-                            className="w-full"
+                            className="w-full h-full p-4 text-base whitespace-normal transition-transform hover:scale-105"
                         >
                             {choice.text}
                         </Button>
@@ -110,7 +110,7 @@ const StoryGame = ({ onGameEnd }: { onGameEnd: () => void }) => {
                 {!gameEnded && (
                     <Button
                         variant="outline"
-                        className="mt-4"
+                        className="mt-4 transition-transform hover:scale-105"
                         onClick={restartGame}
                     >
                         Restart Game
