@@ -1,8 +1,15 @@
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { showError } from "@/utils/toast";
 
-interface Profile {
+export interface GameState {
+  current_scene_id: string;
+  current_score: number;
+  current_inventory: string[];
+}
+
+interface Profile extends GameState {
   username: string | null;
   avatar_url: string | null;
 }
@@ -13,6 +20,7 @@ interface AuthContextType {
   profile: Profile | null;
   loading: boolean;
   refetchProfile: () => void;
+  updateProfileGameState: (newState: Partial<GameState>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,7 +34,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const fetchProfile = useCallback(async (userToFetch: User) => {
     const { data, error } = await supabase
       .from('profiles')
-      .select('username, avatar_url')
+      .select('username, avatar_url, current_scene_id, current_score, current_inventory')
       .eq('id', userToFetch.id)
       .single();
 
@@ -62,7 +70,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [user, fetchProfile]);
 
-  const value = { session, user, profile, loading, refetchProfile };
+  const updateProfileGameState = async (newState: Partial<GameState>) => {
+    if (!user) return;
+    const { error } = await supabase
+        .from('profiles')
+        .update(newState)
+        .eq('id', user.id);
+    if (error) {
+        showError("Failed to save game progress.");
+        console.error(error);
+    }
+    // Also update local state to avoid a full refetch
+    setProfile(prev => prev ? { ...prev, ...newState } as Profile : null);
+  };
+
+  const value = { session, user, profile, loading, refetchProfile, updateProfileGameState };
 
   return (
     <AuthContext.Provider value={value}>

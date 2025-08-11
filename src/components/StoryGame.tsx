@@ -9,16 +9,29 @@ import { Inventory } from './Inventory';
 import { Skeleton } from './ui/skeleton';
 
 const StoryGame = () => {
-    const { user } = useAuth();
+    const { user, profile, updateProfileGameState } = useAuth();
 
     const [storyData, setStoryData] = useState<Story | null>(null);
     const [storyLoading, setStoryLoading] = useState(true);
 
-    const [currentNodeKey, setCurrentNodeKey] = useState<string>(() => localStorage.getItem('adventureGame_node') || 'start');
-    const [score, setScore] = useState<number>(() => parseInt(localStorage.getItem('adventureGame_score') || '0', 10));
-    const [inventory, setInventory] = useState<string[]>(() => JSON.parse(localStorage.getItem('adventureGame_inventory') || '[]'));
-    const [gameEnded, setGameEnded] = useState<boolean>(() => localStorage.getItem('adventureGame_ended') === 'true');
+    const [currentNodeKey, setCurrentNodeKey] = useState<string>('start');
+    const [score, setScore] = useState<number>(0);
+    const [inventory, setInventory] = useState<string[]>([]);
+    const [gameEnded, setGameEnded] = useState<boolean>(false);
     const [unlockedAchievements, setUnlockedAchievements] = useState<string[]>([]);
+
+    useEffect(() => {
+        if (profile && storyData) {
+            const sceneId = profile.current_scene_id || 'start';
+            const currentScene = storyData[sceneId];
+            const isEndScene = currentScene?.choices.some(c => c.nextSceneId === 'start') || sceneId === 'endGame';
+            
+            setCurrentNodeKey(sceneId);
+            setScore(profile.current_score || 0);
+            setInventory(profile.current_inventory || []);
+            setGameEnded(isEndScene);
+        }
+    }, [profile, storyData]);
 
     useEffect(() => {
         if (!user) return;
@@ -38,16 +51,10 @@ const StoryGame = () => {
     }, [user]);
 
     const unlockAchievement = useCallback(async (key: string) => {
-        if (!user || unlockedAchievements.includes(key)) {
-            return;
-        }
+        if (!user || unlockedAchievements.includes(key)) return;
         setUnlockedAchievements(prev => [...prev, key]);
-
         const { data: achievement } = await supabase.from('achievements').select('name').eq('key', key).single();
-        if (achievement) {
-            showSuccess(`Achievement Unlocked: ${achievement.name}`);
-        }
-
+        if (achievement) showSuccess(`Achievement Unlocked: ${achievement.name}`);
         await supabase.from('user_achievements').insert({ user_id: user.id, achievement_key: key });
     }, [user, unlockedAchievements]);
 
@@ -81,19 +88,7 @@ const StoryGame = () => {
         fetchStory();
     }, []);
 
-    useEffect(() => { localStorage.setItem('adventureGame_node', currentNodeKey); }, [currentNodeKey]);
-    useEffect(() => { localStorage.setItem('adventureGame_score', score.toString()); }, [score]);
-    useEffect(() => { localStorage.setItem('adventureGame_inventory', JSON.stringify(inventory)); }, [inventory]);
-    useEffect(() => { localStorage.setItem('adventureGame_ended', gameEnded.toString()); }, [gameEnded]);
-
-    const clearSavedGameState = useCallback(() => {
-        localStorage.removeItem('adventureGame_node');
-        localStorage.removeItem('adventureGame_score');
-        localStorage.removeItem('adventureGame_inventory');
-        localStorage.removeItem('adventureGame_ended');
-    }, []);
-
-    const saveScore = useCallback(async (finalScore: number, endingSceneId: string) => {
+    const saveHighScore = useCallback(async (finalScore: number, endingSceneId: string) => {
         if (!user) return;
         try {
             const { data: existingScore, error: selectError } = await supabase.from('game_scores').select('score').eq('user_id', user.id).single();
@@ -110,53 +105,56 @@ const StoryGame = () => {
         }
     }, [user]);
 
-    useEffect(() => {
-        if (gameEnded) {
-            const hasBeenSaved = localStorage.getItem('adventureGame_score_saved') === score.toString();
-            if (!hasBeenSaved) {
-                saveScore(score, currentNodeKey);
-                localStorage.setItem('adventureGame_score_saved', score.toString());
-            }
-        }
-    }, [gameEnded, score, currentNodeKey, saveScore]);
-
-    const restartGame = useCallback(() => {
-        clearSavedGameState();
-        localStorage.removeItem('adventureGame_score_saved');
-        setCurrentNodeKey('start');
-        setScore(0);
-        setInventory([]);
+    const restartGame = useCallback(async () => {
+        const initialState = {
+            current_scene_id: 'start',
+            current_score: 0,
+            current_inventory: [],
+        };
+        await updateProfileGameState(initialState);
+        setCurrentNodeKey(initialState.current_scene_id);
+        setScore(initialState.current_score);
+        setInventory(initialState.current_inventory);
         setGameEnded(false);
-    }, [clearSavedGameState]);
+    }, [updateProfileGameState]);
 
-    const handleChoice = (choice: Choice) => {
-        if (!storyData) return;
+    const handleChoice = async (choice: Choice) => {
+        if (!storyData || !user) return;
         const nextNodeKey = choice.nextSceneId;
         const nextNode = storyData[nextNodeKey];
         if (!nextNode) return;
 
         if (nextNodeKey === 'start') {
-            restartGame();
+            await restartGame();
             return;
         }
         
         const newScore = score + (nextNode.score || 0);
-        const newInventory = nextNode.gives ? [...new Set([...inventory, nextNode.gives])] : inventory;
+        const newInventory = nextNode.gives ? [...new Set([...inventory, nextNode.gives])] : [...inventory];
         const isEndScene = nextNode.choices.some(c => c.nextSceneId === 'start') || nextNodeKey === 'endGame';
 
         setCurrentNodeKey(nextNodeKey);
         setScore(newScore);
         setInventory(newInventory);
-        if (isEndScene) setGameEnded(true);
 
-        // --- Achievement Checks ---
+        await updateProfileGameState({
+            current_scene_id: nextNodeKey,
+            current_score: newScore,
+            current_inventory: newInventory,
+        });
+
+        if (isEndScene) {
+            setGameEnded(true);
+            saveHighScore(newScore, nextNodeKey);
+        }
+
         if (currentNodeKey === 'start') unlockAchievement('GAME_START');
         if (nextNode.gives === 'orb') unlockAchievement('FOUND_ORB');
         if (newScore >= 50 && score < 50) unlockAchievement('HIGH_SCORE_50');
         if (isEndScene && nextNodeKey.includes('forest')) unlockAchievement('FOREST_ENDING');
     };
 
-    if (storyLoading) {
+    if (storyLoading || (user && !profile)) {
         return (
             <Card className="w-full shadow-lg">
                 <CardHeader><CardTitle className="text-center text-2xl font-bold">Adventure Quest</CardTitle></CardHeader>
