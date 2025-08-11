@@ -150,10 +150,14 @@ const StoryGame = () => {
             saveHighScore(newScore, nextNodeKey);
         }
 
+        // Data-driven achievement check
+        if (nextNode.grants_achievement) {
+            unlockAchievement(nextNode.grants_achievement);
+        }
+
+        // Special case achievement checks
         if (currentNodeKey === 'start') unlockAchievement('GAME_START');
-        if (nextNode.gives === 'orb') unlockAchievement('FOUND_ORB');
         if (newScore >= 50 && score < 50) unlockAchievement('HIGH_SCORE_50');
-        if (isEndScene && nextNodeKey.includes('forest')) unlockAchievement('FOREST_ENDING');
     };
 
     if (storyLoading || (user && !profile)) {

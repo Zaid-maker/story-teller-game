@@ -10,6 +10,7 @@ export interface Scene {
   choices: Choice[];
   score?: number;
   gives?: string;
+  grants_achievement?: string;
 }
 
 export type Story = Record<string, Scene>;
