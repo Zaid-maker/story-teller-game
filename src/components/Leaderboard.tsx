@@ -2,9 +2,10 @@ import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Crown, User } from 'lucide-react';
+import { Crown, User, Info } from 'lucide-react';
 import { Skeleton } from './ui/skeleton';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface Score {
     score: number;
@@ -12,6 +13,9 @@ interface Score {
         username: string;
         avatar_url: string | null;
     };
+    scenes: {
+        text: string;
+    } | null;
 }
 
 const Leaderboard = () => {
@@ -22,19 +26,25 @@ const Leaderboard = () => {
         setLoading(true);
         const { data, error } = await supabase
             .from('game_scores')
-            .select('score, profiles!inner(username, avatar_url)')
+            .select('score, profiles!inner(username, avatar_url), scenes(text)')
             .order('score', { ascending: false })
             .limit(10);
 
         if (error) {
             console.error('Error fetching scores:', error);
+            setScores([]);
         } else if (data) {
             const validScores = data
                 .map((s) => {
-                    const profileData = Array.isArray(s.profiles) ? s.profiles[0] : s.profiles;
-                    return { ...s, profiles: profileData };
+                    const profile = Array.isArray(s.profiles) ? s.profiles[0] : s.profiles;
+                    const scene = Array.isArray(s.scenes) ? s.scenes[0] : s.scenes;
+                    return {
+                        score: s.score,
+                        profiles: profile || null,
+                        scenes: scene || null,
+                    };
                 })
-                .filter((s): s is Score => !!s.profiles);
+                .filter((s): s is Score => s.profiles !== null);
             setScores(validScores);
         }
         setLoading(false);
@@ -96,7 +106,21 @@ const Leaderboard = () => {
                                         {score.profiles.username || 'Anonymous'}
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        {score.score}
+                                        <div className="flex items-center justify-end gap-2">
+                                            <span>{score.score}</span>
+                                            {score.scenes?.text && (
+                                                <Tooltip>
+                                                    <TooltipTrigger>
+                                                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        <p className="max-w-xs text-sm">
+                                                            <strong>Ending:</strong> {score.scenes.text}
+                                                        </p>
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            )}
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             ))}
