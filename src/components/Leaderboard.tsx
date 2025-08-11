@@ -8,6 +8,7 @@ import { Crown, User, Info } from 'lucide-react';
 import { Skeleton } from './ui/skeleton';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 
 interface Score {
     user_id: string;
@@ -108,15 +109,30 @@ const Leaderboard = () => {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead className="w-[50px]">Rank</TableHead>
+                                <TableHead className="w-[50px] text-center">Rank</TableHead>
                                 <TableHead>Player</TableHead>
                                 <TableHead className="text-right">Score</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {scores.map((score, index) => (
-                                <TableRow key={score.user_id} data-current-user={user?.id === score.user_id}>
-                                    <TableCell className="font-medium">{index + 1}</TableCell>
+                                <TableRow 
+                                    key={score.user_id} 
+                                    className={cn(
+                                        index === 0 && "bg-yellow-400/10 hover:bg-yellow-400/20",
+                                        index === 1 && "bg-slate-400/10 hover:bg-slate-400/20",
+                                        index === 2 && "bg-amber-500/10 hover:bg-amber-500/20",
+                                    )}
+                                    data-current-user={user?.id === score.user_id}
+                                >
+                                    <TableCell className="font-medium text-lg">
+                                        <div className="flex items-center justify-center gap-1.5">
+                                            <span>{index + 1}</span>
+                                            {index === 0 && <Crown className="h-5 w-5 text-yellow-400" />}
+                                            {index === 1 && <Crown className="h-5 w-5 text-slate-400" />}
+                                            {index === 2 && <Crown className="h-5 w-5 text-amber-600" />}
+                                        </div>
+                                    </TableCell>
                                     <TableCell>
                                         <Link to={`/profile/${score.user_id}`} className="flex items-center gap-3 hover:underline">
                                             <Avatar className="h-8 w-8">
@@ -153,7 +169,7 @@ const Leaderboard = () => {
                                         <TableCell colSpan={3} className="text-center text-muted-foreground py-2">...</TableCell>
                                     </TableRow>
                                     <TableRow data-current-user="true">
-                                        <TableCell className="font-medium">{userRank.rank}</TableCell>
+                                        <TableCell className="font-medium text-center">{userRank.rank}</TableCell>
                                         <TableCell>
                                             <div className="flex items-center gap-3 font-semibold">
                                                 <Avatar className="h-8 w-8">
