@@ -10,6 +10,7 @@ import { showSuccess, showError } from "@/utils/toast";
 import { Header } from "@/components/Header";
 import { AvatarUpload } from "@/components/AvatarUpload";
 import { PageLoader } from "@/components/PageLoader";
+import { AchievementsList } from "@/components/AchievementsList";
 
 const Account = () => {
   const { user, session, profile, refetchProfile, loading: authLoading } = useAuth();
@@ -57,15 +58,6 @@ const Account = () => {
     }
   };
 
-  const handleSignOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      showError(error.message);
-    } else {
-      navigate("/login");
-    }
-  };
-
   if (authLoading) {
     return <PageLoader />;
   }
@@ -76,35 +68,40 @@ const Account = () => {
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
       <main className="flex-grow flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
+        <Card className="w-full max-w-2xl">
           <CardHeader>
             <CardTitle>Account</CardTitle>
             <CardDescription>Update your account settings. Your email is {user?.email}</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <AvatarUpload
-              userId={user.id}
-              url={avatarUrl}
-              onUpload={(url) => {
-                setAvatarUrl(url);
-              }}
-            />
-            <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
-              <Input
-                id="username"
-                type="text"
-                value={username || ""}
-                onChange={(e) => setUsername(e.target.value)}
-                disabled={updateLoading}
+          <CardContent className="space-y-8">
+            <div className="space-y-6">
+              <h3 className="text-lg font-semibold border-b pb-2">Profile</h3>
+              <AvatarUpload
+                userId={user.id}
+                url={avatarUrl}
+                onUpload={(url) => {
+                  setAvatarUrl(url);
+                }}
               />
-               <p className="text-sm text-muted-foreground">This will be your name on the leaderboard.</p>
+              <div className="space-y-2">
+                <Label htmlFor="username">Username</Label>
+                <Input
+                  id="username"
+                  type="text"
+                  value={username || ""}
+                  onChange={(e) => setUsername(e.target.value)}
+                  disabled={updateLoading}
+                />
+                 <p className="text-sm text-muted-foreground">This will be your name on the leaderboard.</p>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+                <h3 className="text-lg font-semibold border-b pb-2">Achievements</h3>
+                <AchievementsList userId={user.id} />
             </div>
           </CardContent>
-          <CardFooter className="flex justify-between">
-            <Button variant="outline" onClick={handleSignOut} disabled={updateLoading}>
-              Sign Out
-            </Button>
+          <CardFooter className="flex justify-end">
             <Button onClick={updateProfile} disabled={updateLoading}>
               {updateLoading ? "Saving..." : "Save Changes"}
             </Button>
