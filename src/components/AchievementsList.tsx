@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Trophy } from 'lucide-react';
-import * as Lucide from 'lucide-react';
+import { Icon } from '@/components/Icon';
 
 type Achievement = {
   achieved_at: string;
@@ -11,12 +10,6 @@ type Achievement = {
     description: string;
     icon: string | null;
   };
-};
-
-const Icon = ({ name, ...props }: { name: string | null } & Lucide.LucideProps) => {
-    const LucideIcon = name ? (Lucide as any)[name] : Trophy;
-    if (!LucideIcon) return <Trophy {...props} />;
-    return <LucideIcon {...props} />;
 };
 
 export const AchievementsList = ({ userId }: { userId: string }) => {
@@ -66,7 +59,7 @@ export const AchievementsList = ({ userId }: { userId: string }) => {
       {achievements.map((ach, index) => (
         <div key={index} className="flex items-start gap-4 p-4 border rounded-lg">
           <div className="p-2 bg-yellow-400/20 rounded-full mt-1">
-            <Icon name={ach.achievements.icon} className="h-6 w-6 text-yellow-500" />
+            <Icon name={ach.achievements.icon ?? 'Trophy'} className="h-6 w-6 text-yellow-500" />
           </div>
           <div>
             <h4 className="font-semibold">{ach.achievements.name}</h4>
