@@ -62,23 +62,25 @@ const StoryGame = () => {
         const fetchStory = async () => {
             setStoryLoading(true);
             try {
-                const { data: scenesData, error: scenesError } = await supabase.from('scenes').select('*');
-                if (scenesError) throw scenesError;
-                const { data: choicesData, error: choicesError } = await supabase.from('choices').select('*');
-                if (choicesError) throw choicesError;
+                const { data: scenes, error } = await supabase
+                    .from('scenes')
+                    .select('*, choices(text, next_scene_id, requires)');
 
-                const reconstructedStory: Story = {};
-                for (const scene of scenesData) {
-                    reconstructedStory[scene.id] = {
+                if (error) throw error;
+
+                const story: Story = scenes.reduce((acc, scene) => {
+                    acc[scene.id] = {
                         ...scene,
-                        choices: choicesData.filter(c => c.scene_id === scene.id).map(c => ({
+                        choices: scene.choices.map((c: any) => ({
                             text: c.text,
                             nextSceneId: c.next_scene_id,
                             requires: c.requires,
                         })),
                     };
-                }
-                setStoryData(reconstructedStory);
+                    return acc;
+                }, {} as Story);
+                
+                setStoryData(story);
             } catch (err: any) {
                 showError(`Failed to load story: ${err.message}`);
             } finally {
