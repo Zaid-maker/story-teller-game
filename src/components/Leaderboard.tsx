@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/components/AuthProvider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Crown, User, Info } from 'lucide-react';
@@ -20,8 +21,15 @@ interface Score {
     } | null;
 }
 
+interface UserRank {
+    rank: number;
+    score: number;
+}
+
 const Leaderboard = () => {
+    const { user } = useAuth();
     const [scores, setScores] = useState<Score[]>([]);
+    const [userRank, setUserRank] = useState<UserRank | null>(null);
     const [loading, setLoading] = useState(true);
 
     const fetchScores = useCallback(async () => {
@@ -50,8 +58,16 @@ const Leaderboard = () => {
                 .filter((s): s is Score => s.profiles !== null);
             setScores(validScores);
         }
+
+        if (user) {
+            const { data: rankData, error: rankError } = await supabase.rpc('get_user_rank', { p_user_id: user.id }).single();
+            if (rankData && !rankError) {
+                setUserRank(rankData as UserRank);
+            }
+        }
+
         setLoading(false);
-    }, []);
+    }, [user]);
 
     useEffect(() => {
         fetchScores();
@@ -72,6 +88,8 @@ const Leaderboard = () => {
         };
     }, [fetchScores]);
 
+    const isUserInTop10 = user && scores.some(score => score.user_id === user.id);
+
     return (
         <Card className="w-full max-w-md mt-8">
             <CardHeader>
@@ -82,9 +100,9 @@ const Leaderboard = () => {
             <CardContent>
                 {loading ? (
                     <div className="space-y-2">
-                        <Skeleton className="h-8 w-full" />
-                        <Skeleton className="h-8 w-full" />
-                        <Skeleton className="h-8 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
                     </div>
                 ) : (
                     <Table>
@@ -97,7 +115,7 @@ const Leaderboard = () => {
                         </TableHeader>
                         <TableBody>
                             {scores.map((score, index) => (
-                                <TableRow key={index}>
+                                <TableRow key={score.user_id} data-current-user={user?.id === score.user_id}>
                                     <TableCell className="font-medium">{index + 1}</TableCell>
                                     <TableCell>
                                         <Link to={`/profile/${score.user_id}`} className="flex items-center gap-3 hover:underline">
@@ -129,6 +147,28 @@ const Leaderboard = () => {
                                     </TableCell>
                                 </TableRow>
                             ))}
+                            {user && userRank && !isUserInTop10 && (
+                                <>
+                                    <TableRow>
+                                        <TableCell colSpan={3} className="text-center text-muted-foreground py-2">...</TableCell>
+                                    </TableRow>
+                                    <TableRow data-current-user="true">
+                                        <TableCell className="font-medium">{userRank.rank}</TableCell>
+                                        <TableCell>
+                                            <div className="flex items-center gap-3 font-semibold">
+                                                <Avatar className="h-8 w-8">
+                                                    <AvatarImage src={user.user_metadata.avatar_url ?? undefined} alt="Your avatar" />
+                                                    <AvatarFallback>
+                                                        <User className="h-4 w-4" />
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                You
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="text-right font-semibold">{userRank.score}</TableCell>
+                                    </TableRow>
+                                </>
+                            )}
                         </TableBody>
                     </Table>
                 )}
