@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -8,6 +9,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface Score {
+    user_id: string;
     score: number;
     profiles: {
         username: string;
@@ -26,7 +28,7 @@ const Leaderboard = () => {
         setLoading(true);
         const { data, error } = await supabase
             .from('game_scores')
-            .select('score, profiles!inner(username, avatar_url), scenes(text)')
+            .select('user_id, score, profiles!inner(username, avatar_url), scenes(text)')
             .order('score', { ascending: false })
             .limit(10);
 
@@ -39,6 +41,7 @@ const Leaderboard = () => {
                     const profile = Array.isArray(s.profiles) ? s.profiles[0] : s.profiles;
                     const scene = Array.isArray(s.scenes) ? s.scenes[0] : s.scenes;
                     return {
+                        user_id: s.user_id,
                         score: s.score,
                         profiles: profile || null,
                         scenes: scene || null,
@@ -96,14 +99,16 @@ const Leaderboard = () => {
                             {scores.map((score, index) => (
                                 <TableRow key={index}>
                                     <TableCell className="font-medium">{index + 1}</TableCell>
-                                    <TableCell className="flex items-center gap-3">
-                                        <Avatar className="h-8 w-8">
-                                            <AvatarImage src={score.profiles.avatar_url ?? undefined} alt={score.profiles.username || 'player avatar'} />
-                                            <AvatarFallback>
-                                                <User className="h-4 w-4" />
-                                            </AvatarFallback>
-                                        </Avatar>
-                                        {score.profiles.username || 'Anonymous'}
+                                    <TableCell>
+                                        <Link to={`/profile/${score.user_id}`} className="flex items-center gap-3 hover:underline">
+                                            <Avatar className="h-8 w-8">
+                                                <AvatarImage src={score.profiles.avatar_url ?? undefined} alt={score.profiles.username || 'player avatar'} />
+                                                <AvatarFallback>
+                                                    <User className="h-4 w-4" />
+                                                </AvatarFallback>
+                                            </Avatar>
+                                            {score.profiles.username || 'Anonymous'}
+                                        </Link>
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <div className="flex items-center justify-end gap-2">
