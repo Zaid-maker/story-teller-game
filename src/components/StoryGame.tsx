@@ -7,6 +7,7 @@ import { showSuccess, showError } from '@/utils/toast';
 import { Choice, Story } from '@/types/story';
 import { Inventory } from './Inventory';
 import { Skeleton } from './ui/skeleton';
+import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 
 const StoryGame = () => {
     const { user, profile, updateProfileGameState } = useAuth();
@@ -64,7 +65,7 @@ const StoryGame = () => {
             try {
                 const { data: scenes, error } = await supabase
                     .from('scenes')
-                    .select('*, choices(text, next_scene_id, requires)');
+                    .select('*, choices(text, next_scene_id, requires, score_required)');
 
                 if (error) throw error;
 
@@ -75,6 +76,7 @@ const StoryGame = () => {
                             text: c.text,
                             nextSceneId: c.next_scene_id,
                             requires: c.requires,
+                            score_required: c.score_required,
                         })),
                     };
                     return acc;
@@ -150,12 +152,10 @@ const StoryGame = () => {
             saveHighScore(newScore, nextNodeKey);
         }
 
-        // Data-driven achievement check
         if (nextNode.grants_achievement) {
             unlockAchievement(nextNode.grants_achievement);
         }
 
-        // Special case achievement checks
         if (currentNodeKey === 'start') unlockAchievement('GAME_START');
         if (newScore >= 50 && score < 50) unlockAchievement('HIGH_SCORE_50');
     };
@@ -177,7 +177,21 @@ const StoryGame = () => {
     }
 
     const currentNode = storyData ? storyData[currentNodeKey] : null;
-    const availableChoices = currentNode?.choices?.filter(choice => !choice.requires || inventory.includes(choice.requires));
+    
+    const availableChoices = currentNode?.choices?.map(choice => {
+        const canAfford = !choice.score_required || score >= choice.score_required;
+        const hasItem = !choice.requires || inventory.includes(choice.requires);
+        const disabled = !canAfford || !hasItem;
+        
+        let disabledReason = '';
+        if (!canAfford) {
+            disabledReason = `You need ${choice.score_required} score to do this.`;
+        } else if (!hasItem) {
+            disabledReason = `You need the '${choice.requires}' item.`;
+        }
+
+        return { ...choice, disabled, disabledReason };
+    });
 
     return (
         <Card className="w-full shadow-lg">
@@ -195,9 +209,24 @@ const StoryGame = () => {
             <CardFooter className="flex flex-col gap-4 p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-lg mx-auto">
                     {availableChoices?.map((choice, index) => (
-                        <Button key={index} onClick={() => handleChoice(choice)} className="w-full h-full p-4 text-base whitespace-normal transition-transform hover:scale-105">
-                            {choice.text}
-                        </Button>
+                        <Tooltip key={index} delayDuration={100}>
+                            <TooltipTrigger asChild>
+                                <div className="w-full">
+                                    <Button
+                                        onClick={() => handleChoice(choice)}
+                                        disabled={choice.disabled}
+                                        className="w-full h-full p-4 text-base whitespace-normal transition-transform hover:scale-105"
+                                    >
+                                        {choice.text}
+                                    </Button>
+                                </div>
+                            </TooltipTrigger>
+                            {choice.disabled && (
+                                <TooltipContent>
+                                    <p>{choice.disabledReason}</p>
+                                </TooltipContent>
+                            )}
+                        </Tooltip>
                     ))}
                 </div>
                 {!gameEnded && <Button variant="outline" className="mt-4 transition-transform hover:scale-105" onClick={restartGame}>Restart Game</Button>}

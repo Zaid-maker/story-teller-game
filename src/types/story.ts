@@ -2,6 +2,7 @@ export interface Choice {
   text: string;
   nextSceneId: string;
   requires?: string;
+  score_required?: number;
 }
 
 export interface Scene {
