@@ -1,7 +1,6 @@
-import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
+import { useLeaderboard } from '@/hooks/useLeaderboard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Crown, User, Info } from 'lucide-react';
@@ -10,84 +9,9 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
-interface Score {
-    user_id: string;
-    score: number;
-    profiles: {
-        username: string;
-        avatar_url: string | null;
-    };
-    scenes: {
-        text: string;
-    } | null;
-}
-
-interface UserRank {
-    rank: number;
-    score: number;
-}
-
 const Leaderboard = () => {
     const { user } = useAuth();
-    const [scores, setScores] = useState<Score[]>([]);
-    const [userRank, setUserRank] = useState<UserRank | null>(null);
-    const [loading, setLoading] = useState(true);
-
-    const fetchScores = useCallback(async () => {
-        setLoading(true);
-        const { data, error } = await supabase
-            .from('game_scores')
-            .select('user_id, score, profiles!inner(username, avatar_url), scenes(text)')
-            .order('score', { ascending: false })
-            .limit(10);
-
-        if (error) {
-            console.error('Error fetching scores:', error);
-            setScores([]);
-        } else if (data) {
-            const validScores = data
-                .map((s) => {
-                    const profile = Array.isArray(s.profiles) ? s.profiles[0] : s.profiles;
-                    const scene = Array.isArray(s.scenes) ? s.scenes[0] : s.scenes;
-                    return {
-                        user_id: s.user_id,
-                        score: s.score,
-                        profiles: profile || null,
-                        scenes: scene || null,
-                    };
-                })
-                .filter((s): s is Score => s.profiles !== null);
-            setScores(validScores);
-        }
-
-        if (user) {
-            const { data: rankData, error: rankError } = await supabase.rpc('get_user_rank', { p_user_id: user.id }).single();
-            if (rankData && !rankError) {
-                setUserRank(rankData as UserRank);
-            }
-        }
-
-        setLoading(false);
-    }, [user]);
-
-    useEffect(() => {
-        fetchScores();
-
-        const channel = supabase
-            .channel('realtime-scores')
-            .on(
-                'postgres_changes',
-                { event: '*', schema: 'public', table: 'game_scores' },
-                () => {
-                    fetchScores();
-                }
-            )
-            .subscribe();
-
-        return () => {
-            supabase.removeChannel(channel);
-        };
-    }, [fetchScores]);
+    const { scores, userRank, loading } = useLeaderboard();
 
     const isUserInTop10 = user && scores.some(score => score.user_id === user.id);
 
